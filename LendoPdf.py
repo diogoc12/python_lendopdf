@@ -1,25 +1,44 @@
+from array import array
 import PyPDF2
 import conexao
+from openpyxl import Workbook
 
-pdfFile  = open('wpdf.pdf', 'rb')
+wb = Workbook()
+
+planilha = wb.worksheets[0]
+
+pdfFile  = open('Contrato 2.pdf', 'rb')
 dadospdf = PyPDF2.PdfFileReader(pdfFile)
-qtde1=0
-sql=""
+informacao=""
+posicao=""
+for qtde in range(dadospdf.numPages):    
+    informacao= informacao + (dadospdf.getPage(qtde).extractText())
+    parsed = ''.join(informacao)       
 
-for qtde in range(dadospdf.numPages):
-       print(dadospdf.getPage(qtde).extractText())
-       sql =  sql + str("insert into read_pdf(cidade) VALUES ( '"+dadospdf.getPage(qtde).extractText().replace("'","")+"'); ")
-      
-conexao.cur.execute(sql)
-conexao.cur.execute('select codigo, cidade from read_pdf')
-recset = conexao.cur.fetchall()
-for rec in recset:
-    print(str(rec[0]) + '->' + str(rec[1]))
+posicao0=informacao.index("SP") 
+id = parsed[posicao0-10:posicao0]
 
-conexao.con.close()
-       
+posicao1=informacao.index("lavrada em até") 
+dias_contrato = parsed[posicao1+15:posicao1+19]
 
-    
-    
-    
- 
+posicao2=informacao.index("3.1. R$") 
+valor_contrato = parsed[posicao2+7:informacao.index("4. Da")]
+
+posicao3=informacao.index("São Paulo,") 
+data_assinatura = parsed[posicao3+10:posicao3+26]
+
+print(data_assinatura)
+	
+
+planilha['A1']='Unit_id'
+planilha['B1']='Valor_Total'
+planilha['C1']='Data_Contrato'
+planilha['D1']='Data_Excritura'
+
+planilha['A2']=id
+planilha['B2']=valor_contrato
+planilha['C2']=dias_contrato
+planilha['D2']=data_assinatura
+
+planilha.title = "OutPutContratos"
+wb.save('C:/OutPutContratos.xls')
